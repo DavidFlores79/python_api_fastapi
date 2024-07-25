@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List, Union, Optional
-from fastapi import FastAPI, HTTPException, Body
+from typing import Annotated, List, Union, Optional
+from fastapi import FastAPI, File, Form, HTTPException, Body, Path
 
 app = FastAPI()
 app.title = "API con FastAPI"
@@ -49,7 +49,16 @@ async def add_todo( data: Todo ):
     return TODO_LIST
 
 
+@app.post("/support")
+async def create_support_ticket(title: Annotated[str, Form()], message: Annotated[str, Form()]):
+    return { "title": title, "message": message }
 
-
-
+@app.post("/todo/{todo_id}/attachment")
+async def upload_todo_file(todo_id: Annotated[int, Path()], file: Annotated[bytes, File()]):
+    try:
+        todo_data = next( todo for todo in TODO_LIST if todo["id"] == todo_id )
+        todo_data["file_size"] = len(file)
+        return todo_data
+    except:
+        raise HTTPException(status_code=404, detail="TODO Not Found")
 
