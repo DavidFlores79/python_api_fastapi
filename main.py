@@ -1,4 +1,5 @@
-from typing import Union
+from pydantic import BaseModel, Field
+from typing import Union, Optional
 from fastapi import FastAPI, HTTPException, Body
 
 app = FastAPI()
@@ -9,6 +10,12 @@ TODO_LIST = [
         { "id": 2, "description" : "Learn Python", "completed" : False },
         { "id": 3, "description" : "Learn FastAPI", "completed" : False },
     ]
+
+#Definir el modelo TODO
+class Todo(BaseModel):
+    id: Optional[int] = None
+    description: str = Field(min_length=3, max_length=255)
+    completed: bool = Field(default=False)
 
 @app.get("/")
 async def hello_word() :
@@ -34,11 +41,10 @@ async def get_todo( todo_id: int ):
 
 
 @app.post("/todo")
-async def add_todo( id:int = Body(), description: str = Body(), completed: bool = Body() ):
-    TODO_LIST.append( {
-        "id": id,
-        "description": description,
-        "completed": completed,
-    })
+async def add_todo( data: Todo ):
+    TODO_LIST.append(Todo)
     return TODO_LIST
+
+
+
 
