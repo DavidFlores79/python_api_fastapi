@@ -1,66 +1,15 @@
-from pydantic import BaseModel, Field
-from typing import Annotated, List, Union, Optional
-from fastapi import FastAPI, File, Form, HTTPException, Body, Path, UploadFile
+from enum import Enum
+from fastapi import FastAPI
+from routers import todo, support
 
-app = FastAPI()
-app.title = "API con FastAPI"
+class Tags(Enum):
+    home: str = "Home"
 
-#Definir el modelo TODO
-class Todo(BaseModel):
-    id: Optional[int] = None
-    description: str = Field(min_length=3, max_length=255)
-    completed: bool = Field(default=False)
+app = FastAPI(title = "TODO API con FastAPI")
 
+app.include_router(todo.router)
+app.include_router(support.router)
 
-TODO_LIST: List[Todo] = [
-        { "id": 1, "description" : "Mi fist Task", "completed" : True },
-        { "id": 2, "description" : "Learn Python", "completed" : False },
-        { "id": 3, "description" : "Learn FastAPI", "completed" : False },
-    ]
-
-@app.get("/")
-async def hello_word() :
-    return { "message" : "Hello World" }
-
-
-@app.get("/todo")
-async def get_all( completed: Union[ bool, None] =  None) :
-    if completed is not None :
-        filtered_todos = list( filter(lambda todo: todo["completed"] == completed, TODO_LIST) )
-        return filtered_todos
-    else :
-        return TODO_LIST
-    
-@app.get("/todo/{todo_id}")
-async def get_todo( todo_id: int ):
-    try:
-        todo_data = next( todo for todo in TODO_LIST if todo["id"] == todo_id )
-        return todo_data
-    except:
-        raise HTTPException(status_code= 404, detail= "TODO Not Found")
-
-
-@app.post("/todo", response_model=List[Todo], name="Create new TODO", 
-          summary="Create new TODO item",
-          description="Create a new TODO given a description and a completed boolean value",
-          status_code=201)
-async def add_todo( data: Todo ):
-    TODO_LIST.append(data)
-    return TODO_LIST
-
-
-@app.post("/support")
-async def create_support_ticket(title: Annotated[str, Form()], message: Annotated[str, Form()]):
-    return { "title": title, "message": message }
-
-@app.post("/todo/{todo_id}/attachment")
-async def upload_todo_file(todo_id: Annotated[int, Path()], file: UploadFile):
-    try:
-        todo_data = next( todo for todo in TODO_LIST if todo["id"] == todo_id )
-        todo_data["file_name"] = file.filename
-        todo_data["content_type"] = file.content_type
-        file_content = await file.read()
-        return todo_data
-    except:
-        raise HTTPException(status_code=404, detail="TODO Not Found")
-
+@app.get("/", tags=[Tags.home])
+async def home() :
+    return { "name" : "TODO Rest API", "version" : "1.0.0" }
